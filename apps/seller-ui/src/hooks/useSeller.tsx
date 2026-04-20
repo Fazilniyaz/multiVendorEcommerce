@@ -1,0 +1,18 @@
+import axiosInstance from "../utils/axiosInstance";
+import { useQuery } from "@tanstack/react-query";
+
+const fetchSeller = async () => {
+    const response = await axiosInstance.get("/api/logged-in-seller");
+    return response.data.seller;
+}
+
+export const useSeller = () => {
+    const { data: seller , isLoading, isError, refetch } = useQuery({
+        queryKey: ["seller"],
+        queryFn: fetchSeller,
+        retry: 1,
+        staleTime: 1000 * 60 * 5
+    })
+    return { seller, isLoading, isError, refetch }
+
+}

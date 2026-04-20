@@ -1,0 +1,48 @@
+{
+    "name": "seller-ui",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "apps/seller-ui/src",
+    "projectType": "application",
+    "tags": [],
+    "targets": {
+        "dev": {
+            "executor": "@nx/next:server",
+            "defaultConfiguration": "development",
+            "options": {
+                "buildTarget": "seller-ui:build",
+                "dev": true
+            },
+            "configurations": {
+                "development": {
+                    "buildTarget": "seller-ui:build:development",
+                    "dev": true
+                },
+                "production": {
+                    "buildTarget": "seller-ui:build:production",
+                    "dev": false
+                }
+            }
+        },
+        "build": {
+            "executor": "@nx/next:build",
+            "outputs": [
+                "{options.outputPath}"
+            ],
+            "defaultConfiguration": "production",
+            "options": {
+                "outputPath": "dist/apps/seller-ui"
+            },
+            "configurations": {
+                "development": {
+                    "outputPath": "apps/seller-ui"
+                },
+                "production": {
+                    "outputPath": "dist/apps/seller-ui"
+                }
+            }
+        },
+        "lint": {
+            "executor": "@nx/eslint:lint"
+        }
+    }
+}

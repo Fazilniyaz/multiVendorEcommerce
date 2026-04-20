@@ -1,0 +1,34 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "out-tsc/auth-service",
+    "resolveJsonModule": true,
+    "types": [
+      "node"
+    ],
+    "rootDir": "../../",
+    "baseUrl": "../../",
+    "paths": {
+      "@multi-vendor-ecommerce/prisma": [
+        "packages/libs/prisma/index.ts"
+      ],
+      "@packages/*": [
+        "packages/*"
+      ]
+    },
+    "tsBuildInfoFile": "out-tsc/auth-service/tsconfig.app.tsbuildinfo"
+  },
+  "include": [
+    "**/*.ts",
+    "src/**/*.json",
+    "../../packages/**/*.ts"
+  ],
+  "exclude": [
+    "out-tsc",
+    "dist",
+    "jest.config.ts",
+    "jest.config.cts",
+    "src/**/*.spec.ts",
+    "src/**/*.test.ts"
+  ]
+}
