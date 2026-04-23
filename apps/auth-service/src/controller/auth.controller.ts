@@ -370,8 +370,8 @@ export const createStripeConnectLink = async (req: Request, res: Response, next:
 
         const accountLink = await stripe.accountLinks.create({
             account: account.id,
-            refresh_url: "http://localhost:3000/success",
-            return_url: "http://localhost:3000/success",
+            refresh_url: "http://localhost:4200/login",
+            return_url: "http://localhost:4200/login",
             type: "account_onboarding",
         });
 

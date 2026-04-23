@@ -88,7 +88,7 @@ export default function CreateShop({ sellerId, setActiveStep }: { sellerId: stri
                     )}
                 </div>
 
-                {/* Address */}\
+                {/* Address */}
                 <div className='flex flex-col gap-1'>
                     <label className='text-gray-800 text-sm font-medium'>Address</label>
                     <input

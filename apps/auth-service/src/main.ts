@@ -50,7 +50,7 @@ app.use("/api", authRouter);
 app.get("/docs-json", (req, res) => {
   res.json(swaggerDocument);
 });
-app.use(errorMiddleware); // ✅ Global error handler
+app.use(errorMiddleware); //  Global error handler
 
 const server = app.listen(port, () => {
   console.log(`Listening at http://localhost:${port}/api`);
