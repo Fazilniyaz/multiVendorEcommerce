@@ -6,6 +6,8 @@ import rateLimit from 'express-rate-limit';
 // import swaggerUi from 'swagger-ui-express';
 // import axios from 'axios';
 import cookieParser from 'cookie-parser';
+import initializeSiteConfig from "./libs/initializeSiteConfig"
+
 
 
 
@@ -45,7 +47,15 @@ app.get('/gateway-health', (req, res) => {
 app.use("/", proxy('http://localhost:6001'));
 
 const port = process.env.PORT || 8080;
-const server = app.listen(port, () => {
+const server = app.listen(port, async () => {
   console.log(`Listening at http://localhost:${port}`);
+
+  try {
+    await initializeSiteConfig();
+    console.log("Site config initialized")
+  } catch (err) {
+    console.error("Error initializing site config", err)
+  }
+
 });
 server.on('error', console.error);
