@@ -6,14 +6,14 @@ import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 // import axios from 'axios';
 import cookieParser from 'cookie-parser';
 import { errorMiddleware } from "@packages/error-handler/error-middleware";
-import authRouter from "./routes/auth.router";
-import swaggerUi from "swagger-ui-express";
+import router from './routes/product.routes';
+// import swaggerUi from "swagger-ui-express";
 // import swaggerDocument from "./swagger-output.json";
 
-const swaggerDocument = require("./swagger-output.json");
+// const swaggerDocument = require("./swagger-output.json");
 
 // const host = process.env.HOST ?? 'localhost';
-const port = process.env.PORT ? Number(process.env.PORT) : 6001;
+const port = process.env.PORT ? Number(process.env.PORT) : 6002;
 
 const app = express();
 
@@ -40,21 +40,21 @@ const limiter = rateLimit({
 });
 
 app.use(limiter);
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+// app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-app.get('/authService-health', (req, res) => {
-  res.send({ 'message': 'Hello API' });
+app.get('/product-service-health', (req, res) => {
+  res.send({ 'message': 'Hello PRODUCT API' });
 });
 
-app.use("/api", authRouter);
-app.get("/docs-json", (req, res) => {
-  res.json(swaggerDocument);
-});
+app.use("/api", router);
+// app.get("/docs-json", (req, res) => {
+//   res.json(swaggerDocument);
+// });
 app.use(errorMiddleware); //  Global error handler
 
 const server = app.listen(port, () => {
-  console.log(`Auth Service, Listening at http://localhost:${port}/api`);
-  console.log(`Swagger Docs available at http://localhost:${port}/api-docs`)
+  console.log(`Product Service, Listening at http://localhost:${port}/product`);
+  console.log(`Swagger Docs available at http://localhost:${port}/product-docs`)
 });
 server.on('error', (err) => {
   console.error('Server error:', err);

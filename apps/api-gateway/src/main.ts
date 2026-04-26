@@ -8,9 +8,6 @@ import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
 import initializeSiteConfig from "./libs/initializeSiteConfig"
 
-
-
-
 const app = express();
 
 app.use(cors({
@@ -44,6 +41,7 @@ app.get('/gateway-health', (req, res) => {
 });
 
 // ✅ Proxy routes — each service has its own prefix
+app.use("/product", proxy('http://localhost:6002'));
 app.use("/", proxy('http://localhost:6001'));
 
 const port = process.env.PORT || 8080;

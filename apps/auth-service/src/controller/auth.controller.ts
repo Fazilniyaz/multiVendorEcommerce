@@ -117,7 +117,7 @@ export const loginUser = async (req: Request, res: Response, next: NextFunction)
 
 export const refreshToken = async (req: any, res: Response, next: NextFunction) => {
     try {
-        const refreshToken = req.cookies["refresh_token"] || req.cookies["seller_refresh_token"] || req.headers.authorization?.split(" ")[1];
+        const refreshToken = req.cookies["refresh_token"] || req.cookies["seller-refresh-token"] || req.headers.authorization?.split(" ")[1];
 
         if (!refreshToken) {
             return next(new AuthenticationError("Unauthorized or No Refresh Token"));
