@@ -187,7 +187,7 @@ const Page = () => {
                             <tbody className="divide-y divide-gray-800">
                                 {discountCodes.map((discount: any) => (
                                     <tr
-                                        key={discount?._id}
+                                        key={discount?.id}
                                         className="hover:bg-gray-800/40 transition-colors duration-100"
                                     >
                                         <td className="px-6 py-4 text-white font-medium">
