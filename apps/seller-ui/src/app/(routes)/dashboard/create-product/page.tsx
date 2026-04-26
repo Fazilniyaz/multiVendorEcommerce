@@ -11,6 +11,7 @@ import { useQuery } from '@tanstack/react-query';
 import axiosInstance from 'apps/seller-ui/src/utils/axiosInstance';
 import RichTextEditor from 'packages/components/rich-text-editor';
 import SizeSelector from 'packages/components/size-selector';
+import Link from 'next/link';
 
 const Page = () => {
     const {
@@ -100,12 +101,10 @@ const Page = () => {
             >
                 {/* ── Header ── */}
                 <h2 className="text-2xl font-semibold mb-1">Create Product</h2>
-                <div className="flex items-center gap-1 text-sm mb-8">
-                    <span className="text-[#80DEEA] cursor-pointer hover:underline">
-                        Dashboard
-                    </span>
+                <div className='flex items-center text-white mb-8'>
+                    <Link href="/dashboard" className='cursor-pointer'>Dashboard</Link>
                     <ChevronRight size={14} className="text-gray-500" />
-                    <span className="text-gray-400">Create Products</span>
+                    <span className='text-white'>Create Product</span>
                 </div>
 
                 {/* ── Three Column Layout ── */}
