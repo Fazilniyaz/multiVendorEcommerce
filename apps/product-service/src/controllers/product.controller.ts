@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import prisma from "@multi-vendor-ecommerce/prisma";
 import { NotFoundError, ValidationError } from "@packages/error-handler";
+import ImageKit from "@packages/libs/imageKit";
 
 
 //get product categroies
@@ -101,6 +102,37 @@ export const getAllDiscountCodes = async (req: any, res: Response, next: NextFun
         });
 
         return res.status(200).json({ success: true, discountCodes });
+    } catch (error) {
+        next(error)
+    }
+}
+
+//upload product image
+export const uploadProductImage = async (req: any, res: Response, next: NextFunction) => {
+    try {
+        const { fileName } = req.body;
+
+        const result = await ImageKit.upload({
+            file: fileName,
+            fileName: `product-${Date.now()}.jpg`,
+            folder: "/products",
+        })
+
+        return res.status(200).json({ success: true, file_url: result.url, fileId: result.fileId });
+    } catch (error) {
+
+    }
+}
+
+//Delete product image
+export const deleteProductImage = async (req: any, res: Response, next: NextFunction) => {
+    try {
+        const { fileId } = req.body;
+        const result = await ImageKit.deleteFile(fileId);
+        if (result) {
+            return res.status(200).json({ success: true, message: "Product image deleted successfully" });
+        }
+        return next(new Error("Failed to delete product image"));
     } catch (error) {
         next(error)
     }

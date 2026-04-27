@@ -9,9 +9,15 @@ import CustomSpecifications from 'packages/custom-specifications';
 import CustomProperties from 'packages/components/custom-properties';
 import { useQuery } from '@tanstack/react-query';
 import axiosInstance from 'apps/seller-ui/src/utils/axiosInstance';
-import RichTextEditor from 'packages/components/rich-text-editor';
+import dynamic from 'next/dynamic';
+const RichTextEditor = dynamic(() => import('packages/components/rich-text-editor'), { ssr: false });
 import SizeSelector from 'packages/components/size-selector';
 import Link from 'next/link';
+
+interface UploadedImage {
+    fileId: string;
+    file_url: string;
+}
 
 const Page = () => {
     const {
@@ -24,39 +30,73 @@ const Page = () => {
     } = useForm();
 
     const [openImageModal, setOpenImageModal] = useState(false);
-    const [images, setImages] = useState<(File | null)[]>([null]);
+    const [images, setImages] = useState<(UploadedImage | null)[]>([]);
     const [isChanged, setIsChanged] = useState(true);
     const [loading, setLoading] = useState(false);
 
     const onSubmit = (data: any) => console.log(data);
 
-    const handleImageChange = (file: File | null, index: number) => {
-        const updated = [...images];
-        updated[index] = file;
-        if (index === images.length - 1 && images.length < 8) {
-            updated.push(null);
+    const convertFileToBase64 = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = error => reject(error);
+        });
+    };
+
+    const handleImageChange = async (file: File | null, index: number) => {
+        if (!file) return;
+        try {
+            const fileName = await convertFileToBase64(file)
+            const response = await axiosInstance.post("/product/api/upload-product-image", { fileName });
+
+
+            const uploadedImage: UploadedImage | null = {
+                fileId: response.data.fileId,
+                file_url: response.data.file_url
+            }
+            const updatedImages = [...images]
+
+            updatedImages[index] = uploadedImage
+
+            if (index === images.length - 1 && updatedImages.length < 8) {
+                updatedImages.push(null);
+            }
+
+            setImages(updatedImages)
+            setValue("images", updatedImages)
+        } catch (error) {
+            console.log(error)
         }
-        setImages(updated);
-        setValue("images", updated);
     };
 
     const handleSaveDraft = () => {
 
     };
 
-    const handleRemoveImage = (index: number) => {
-        setImages((prev) => {
-            let updated = [...prev];
-            if (index === -1) {
-                updated = [null];
-            } else {
-                updated.splice(index, 1);
+    const handleRemoveImage = async (index: number) => {
+        console.log("Coming")
+        try {
+            const updatedImages = [...images]
+
+            const imageToDelete = updatedImages[index];
+
+            console.log(imageToDelete)
+
+            if (imageToDelete && imageToDelete.fileId) {
+                await axiosInstance.delete("/product/api/delete-product-image", { data: { fileId: imageToDelete.fileId } });
             }
-            if (!updated.includes(null) && updated.length < 8) {
-                updated.push(null);
+
+            updatedImages.splice(index, 1);
+            if (!updatedImages.includes(null) && updatedImages.length < 8) {
+                updatedImages.push(null);
             }
-            return updated;
-        });
+            setImages(updatedImages)
+            setValue("images", updatedImages)
+        } catch (error) {
+            console.log(error)
+        }
     };
 
     const { data, isLoading, isError } = useQuery({
@@ -72,6 +112,16 @@ const Page = () => {
         staleTime: 1000 * 60 * 5,
         retry: 2,
     });
+
+    const { data: discountCodes = [], isLoading: discountLoading } = useQuery({
+        queryKey: ["shop-discounts"],
+        queryFn: async () => {
+            const res = await axiosInstance.get("/product/api/get-all-discount-codes")
+            return res?.data?.discountCodes || []
+        },
+        staleTime: 1000 * 60 * 5,
+        retry: 2,
+    })
 
     const categories = data?.categories || [];
     const subCategoriesData = data?.subCategories || {};
@@ -420,7 +470,28 @@ const Page = () => {
 
                         <div className="flex flex-col gap-1">
                             <label className={labelClass}>Select Discount Codes (optional)</label>
-
+                            {
+                                discountLoading ? (
+                                    <p className='text-gray-400 '>Loading discount codes...</p>
+                                ) : (
+                                    <>
+                                        {discountCodes?.map((code: any) => {
+                                            const currentSelection = watch('discount_codes') || [];
+                                            const isSelected = currentSelection.includes(code._id);
+                                            return (
+                                                <button onClick={() => {
+                                                    const updatedSelection = isSelected
+                                                        ? currentSelection.filter((id: string) => id !== code._id)
+                                                        : [...currentSelection, code._id];
+                                                    setValue('discount_codes', updatedSelection);
+                                                }} type='button' key={code._id} className={`px-3 py-1 rounded-md text-sm font-semibold border ${isSelected ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-800 hover:border-gray-600'}`}>
+                                                    {code?.publicName} ({code.discountValue} {code.discountType === "percentage" ? "%" : "₹"})
+                                                </button>
+                                            );
+                                        })}
+                                    </>
+                                )
+                            }
                         </div>
 
                         {/* Submit button */}
