@@ -8,8 +8,12 @@ interface ImagePlaceholderProps {
     onImageChange: (file: File | null, index: number) => void;
     onRemove?: (index: number) => void;
     defaultImage?: string | null;
+    setSelectedImage?: (e: string) => void;
     index?: number;
     setOpenImageModal?: (open: boolean) => void;
+    images?: any;
+    pictureUploadLoader?: boolean;
+
 }
 
 function ImagePlaceholder({
@@ -20,6 +24,10 @@ function ImagePlaceholder({
     defaultImage = null,
     index = 0,
     setOpenImageModal,
+    setSelectedImage,
+    images,
+    pictureUploadLoader = false,
+
 }: ImagePlaceholderProps) {
     const [imagePreview, setImagePreview] = useState<string | null>(defaultImage);
 
@@ -72,7 +80,11 @@ function ImagePlaceholder({
                         {/* AI enhance button */}
                         <button
                             type="button"
-                            onClick={() => setOpenImageModal?.(true)}
+                            // disabled={pictureUploadLoader}
+                            onClick={() => {
+                                setOpenImageModal?.(true)
+                                setSelectedImage?.(imagePreview || images[index]?.file_url || '')
+                            }}
                             className="p-1.5 rounded-md bg-blue-600 hover:bg-blue-500
                                 shadow-lg transition-colors"
                         >
@@ -81,6 +93,7 @@ function ImagePlaceholder({
                         {/* Remove button */}
                         <button
                             type="button"
+                            // disabled={pictureUploadLoader}
                             onClick={() => {
                                 setImagePreview(null);
                                 onRemove?.(index);

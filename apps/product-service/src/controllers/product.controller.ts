@@ -120,7 +120,7 @@ export const uploadProductImage = async (req: any, res: Response, next: NextFunc
 
         return res.status(200).json({ success: true, file_url: result.url, fileId: result.fileId });
     } catch (error) {
-
+        next(error)
     }
 }
 
