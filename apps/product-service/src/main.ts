@@ -7,10 +7,11 @@ import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
 import { errorMiddleware } from "@packages/error-handler/error-middleware";
 import router from './routes/product.routes';
-// import swaggerUi from "swagger-ui-express";
+import "./jobs/product-cron-jobs"; // Import the cron jobs to ensure they run
+import swaggerUi from "swagger-ui-express";
 // import swaggerDocument from "./swagger-output.json";
 
-// const swaggerDocument = require("./swagger-output.json");
+const swaggerDocument = require("./swagger-output.json");
 
 // const host = process.env.HOST ?? 'localhost';
 const port = process.env.PORT ? Number(process.env.PORT) : 6002;
@@ -47,9 +48,9 @@ app.get('/product-service-health', (req, res) => {
 });
 
 app.use("/api", router);
-// app.get("/docs-json", (req, res) => {
-//   res.json(swaggerDocument);
-// });
+app.get("/docs-json", (req, res) => {
+  res.json(swaggerDocument);
+});
 app.use(errorMiddleware); //  Global error handler
 
 const server = app.listen(port, () => {

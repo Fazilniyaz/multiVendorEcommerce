@@ -80,26 +80,26 @@ function ImagePlaceholder({
                         {/* AI enhance button */}
                         <button
                             type="button"
-                            // disabled={pictureUploadLoader}
+                            disabled={pictureUploadLoader}
                             onClick={() => {
                                 setOpenImageModal?.(true)
-                                setSelectedImage?.(imagePreview || images[index]?.file_url || '')
+                                setSelectedImage?.(images?.[index]?.file_url || imagePreview || '')
                             }}
                             className="p-1.5 rounded-md bg-blue-600 hover:bg-blue-500
-                                shadow-lg transition-colors"
+                                shadow-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <WandSparkles size={14} />
                         </button>
                         {/* Remove button */}
                         <button
                             type="button"
-                            // disabled={pictureUploadLoader}
+                            disabled={pictureUploadLoader}
                             onClick={() => {
                                 setImagePreview(null);
                                 onRemove?.(index);
                             }}
                             className="p-1.5 rounded-md bg-red-600 hover:bg-red-500
-                                shadow-lg transition-colors"
+                                shadow-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <X size={14} />
                         </button>

@@ -1,5 +1,5 @@
 import express, { Router } from 'express';
-import { createDiscountCodes, deleteDiscountCode, deleteProductImage, getAllDiscountCodes, getCategories, uploadProductImage } from '../controllers/product.controller';
+import { createDiscountCodes, createProduct, deleteDiscountCode, deleteProduct, deleteProductImage, getAllDiscountCodes, getCategories, getSHopProducts, restoreProduct, uploadProductImage } from '../controllers/product.controller';
 import isAuthenticated from '@packages/middleware/isAuthenticated';
 
 
@@ -11,5 +11,9 @@ router.delete('/delete-discount-code/:id', isAuthenticated, deleteDiscountCode);
 router.get('/get-all-discount-codes', isAuthenticated, getAllDiscountCodes);
 router.post('/upload-product-image', isAuthenticated, uploadProductImage);
 router.delete('/delete-product-image', isAuthenticated, deleteProductImage);
+router.post('/create-product', isAuthenticated, createProduct);
+router.get("/get-shop-products", isAuthenticated, getSHopProducts);
+router.delete("/delete-product/:productId", isAuthenticated, deleteProduct);
+router.put("/restore-product/:productId", isAuthenticated, restoreProduct);
 
 export default router;

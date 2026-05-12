@@ -16,8 +16,8 @@ const RichTextEditor = dynamic(
 );
 import SizeSelector from "packages/components/size-selector";
 import Link from "next/link";
-import Image from "next/image";
 import { enhancements } from "apps/seller-ui/src/utils/aiEnhancements";
+import { useRouter } from "next/navigation";
 
 interface UploadedImage {
   fileId: string;
@@ -40,9 +40,52 @@ const Page = () => {
   const [loading, setLoading] = useState(false);
   const [pictureUploadLoader, setPictureUploadLoader] = useState(false);
   const [selectedImage, setSelectedImage] = useState('')
+  const [originalImageUrl, setOriginalImageUrl] = useState('')
   const [activeEffect, setActiveEffect] = useState('')
+  const [processing, setProcessing] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
-  const onSubmit = (data: any) => console.log(data);
+  const router = useRouter();
+
+  const onSubmit = async (data: any) => {
+    setSubmitError('');
+    
+    // Validate images are uploaded
+    if (!images || images.length === 0 || !images[0]) {
+      setSubmitError('Please upload at least one product image');
+      return;
+    }
+
+    try{
+      setLoading(true);
+      
+      // Include uploaded images in the submission
+      const formData = {
+        ...data,
+        images: images.filter(Boolean), // Add the images array
+        category: data.category,
+        subCategory: data.sub_category,
+      };
+
+      console.log('Submitting:', formData);
+      
+      const response = await axiosInstance.post("/product/api/create-product", formData);
+      console.log('Success:', response.data);
+      router.push("/dashboard/all-products");
+    }catch(error: any){
+      console.error('Submit error:', error);
+      
+      // Extract meaningful error message
+      const errorMessage = error?.response?.data?.message 
+        || error?.response?.data?.error 
+        || error?.message 
+        || 'Failed to create product. Please try again.';
+      
+      setSubmitError(errorMessage);
+    }finally{
+      setLoading(false);
+    }
+  }
 
   // Keep react-hook-form in sync with the images state
   useEffect(() => {
@@ -86,6 +129,8 @@ const Page = () => {
         file_url: response.data.file_url,
       };
 
+      console.log("Image_url:", uploadedImage.file_url);
+
       setImages((prev) => {
         const updated = [...prev];
         updated[index] = uploadedImage;
@@ -110,6 +155,38 @@ const Page = () => {
   };
 
   const handleSaveDraft = () => { };
+
+  // Helper to set the selected image and track the original URL for transformations
+  const handleSelectImage = (imageUrl: string) => {
+    setSelectedImage(imageUrl);
+    setOriginalImageUrl(imageUrl);
+    setActiveEffect('');
+  };
+
+  const applyTransformation = async (transformation: string) => {
+    if (!originalImageUrl || processing) return;
+
+    // ImageKit transformations only work with server URLs, not blob URLs
+    if (originalImageUrl.startsWith("blob:")) {
+      console.warn("Cannot apply AI transformations to local images. Please wait for upload to complete.");
+      return;
+    }
+
+    setProcessing(true);
+    setActiveEffect(transformation);
+
+    try {
+      // Always build from the original URL to avoid stacking ?tr= params
+      const transformedUrl = `${originalImageUrl}?tr=${transformation}`;
+      console.log("Transformed URL:", transformedUrl);
+      setSelectedImage(transformedUrl);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setProcessing(false);
+    }
+
+  }
 
   const handleRemoveImage = async (index: number) => {
     console.log("Coming");
@@ -200,6 +277,14 @@ const Page = () => {
           <span className="text-white">Create Product</span>
         </div>
 
+        {/* ── Error Alert ── */}
+        {submitError && (
+          <div className="mb-6 p-4 bg-red-900/20 border border-red-700 rounded-md text-red-300 text-sm">
+            <p className="font-semibold">Error:</p>
+            <p>{submitError}</p>
+          </div>
+        )}
+
         {/* ── Three Column Layout ── */}
         <div className="flex gap-6 w-full items-start">
           {/* ══ COL 1 — Images (30%) ══ */}
@@ -212,7 +297,7 @@ const Page = () => {
               index={0}
               pictureUploadLoader={pictureUploadLoader}
               images={images}
-              setSelectedImage={setSelectedImage}
+              setSelectedImage={handleSelectImage}
               onImageChange={handleImageChange}
               onRemove={handleRemoveImage}
             />
@@ -224,7 +309,7 @@ const Page = () => {
                   <ImagePlaceholder
                     key={i}
                     setOpenImageModal={setOpenImageModal}
-                    setSelectedImage={setSelectedImage}
+                    setSelectedImage={handleSelectImage}
                     images={images}
                     small={true}
                     size="765x850"
@@ -253,7 +338,7 @@ const Page = () => {
               rows={6}
               label="Short Description * (Max 150 words)"
               placeholder="Enter product description for quick view"
-              {...register("description", {
+              {...register("short_description", {
                 required: "Description is required",
                 validate: (val) => {
                   const count = val.trim().split(/\s+/).filter(Boolean).length;
@@ -598,44 +683,50 @@ const Page = () => {
                 </h2>
                 <X size={20} className="cursor-pointer" onClick={() => {
                   setOpenImageModal(false)
-
+                  setSelectedImage('')
+                  setOriginalImageUrl('')
+                  setActiveEffect('')
                 }} />
               </div>
               {selectedImage && (
                 <div className="relative w-full h-[250px] rounded-md overflow-hidden border border-gray-600">
-                  <Image
+                  {/* Use plain img tag instead of Next.js Image to avoid 
+                      /_next/image proxy interfering with ImageKit AI transformations */}
+                  <img
                     src={selectedImage}
                     alt="Enhanced product image"
-                    layout="fill"
-                    className="object-cover rounded-lg"
+                    className="w-full h-full object-cover rounded-lg"
                   />
                 </div>
-                
-              )}
-                {selectedImage && (
-    <div className="mt-4 space-y-2">
-        <h3 className="text-white font-sm font-semibold">
-            AI Enhancements
-        </h3>
 
-        <div className="grid grid-cols-2 gap-3 max-h-[250px] overflow-y-auto pr-2">
-            {enhancements?.map(({ label, effect }) => (
-                <button
-                    key={effect}
-                    className={`p-2 rounded-md flex items-center gap-2 ${
-                        activeEffect === effect
+              )}
+              {selectedImage && (
+                <div className="mt-4 space-y-2">
+                  <h3 className="text-white font-sm font-semibold">
+                    AI Enhancements
+                  </h3>
+
+                  <div className="grid grid-cols-2 gap-3 max-h-[250px] overflow-y-auto pr-2">
+                    {enhancements?.map(({ label, effect }) => (
+                      <button
+                        key={effect}
+                        onClick={() => {
+                          applyTransformation(effect)
+                        }}
+                        disabled={processing}
+                        className={`p-2 rounded-md flex items-center gap-2 ${activeEffect === effect
                             ? "bg-blue-600 text-white"
                             : "bg-gray-700 hover:bg-gray-600"
-                    }`}
-                >
-                    <Wand size={18} />
-                    {label}
-                </button>
-            ))}
-        </div>
-    </div>
-)}
-             
+                          }`}
+                      >
+                        <Wand size={18} />
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
             </div>
           </div>
         )}

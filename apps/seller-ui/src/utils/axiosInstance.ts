@@ -8,7 +8,7 @@ const axiosInstance = axios.create({
 });
 
 let isRefreshing = false;
-let refreshSubscribers: (() => void)[] = [];
+let refreshSubscribers: ((error?: any) => void)[] = [];
 
 // Redirect user to /login and prevent infinite redirect loops
 const handleLogout = () => {
@@ -20,13 +20,19 @@ const handleLogout = () => {
 };
 
 // Queue up any requests that come in while a token refresh is in progress
-const subscribeTokenRefresh = (callback: () => void) => {
+const subscribeTokenRefresh = (callback: (error?: any) => void) => {
     refreshSubscribers.push(callback);
 };
 
 // Once we have a new token, retry all queued requests
 const onRefreshSuccess = () => {
     refreshSubscribers.forEach((callback) => callback());
+    refreshSubscribers = [];
+};
+
+// If token refresh fails, reject all queued requests
+const onRefreshFailure = (error: any) => {
+    refreshSubscribers.forEach((callback) => callback(error));
     refreshSubscribers = [];
 };
 
@@ -43,11 +49,20 @@ axiosInstance.interceptors.response.use(
         const originalRequest = error.config;
 
         if (error.response?.status === 401 && !originalRequest._retry) {
+            // Don't try to refresh if this IS the refresh request itself
+            if (originalRequest.url?.includes("/api/refresh-token")) {
+                return Promise.reject(error);
+            }
+
             // If a refresh is already happening, queue this request
             if (isRefreshing) {
-                return new Promise((resolve) => {
-                    subscribeTokenRefresh(() => {
-                        resolve(axiosInstance(originalRequest));
+                return new Promise((resolve, reject) => {
+                    subscribeTokenRefresh((err?: any) => {
+                        if (err) {
+                            reject(err);
+                        } else {
+                            resolve(axiosInstance(originalRequest));
+                        }
                     });
                 });
             }
@@ -56,15 +71,20 @@ axiosInstance.interceptors.response.use(
             isRefreshing = true;
 
             try {
-                // Ask the server to issue a new access token using the refresh token cookie
-                await axiosInstance.post(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/refresh-token`);
+                // Use raw axios (NOT axiosInstance) to avoid interceptor loop/deadlock
+                await axios.post(
+                    `${process.env.NEXT_PUBLIC_SERVER_URL}/api/refresh-token`,
+                    {},
+                    { withCredentials: true }
+                );
                 isRefreshing = false;
                 onRefreshSuccess();
                 // Retry the original request with the new token
                 return axiosInstance(originalRequest);
             } catch (refreshError) {
-                handleLogout();
                 isRefreshing = false;
+                onRefreshFailure(refreshError);
+                handleLogout();
                 return Promise.reject(refreshError);
             }
         }

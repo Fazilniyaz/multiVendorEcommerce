@@ -14,6 +14,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum productStatus {
+ Active
+ Pending
+ Draft
+}
+
 
 model images {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
@@ -23,6 +29,8 @@ model images {
   shopId    String?  @unique @db.ObjectId
   users     users?   @relation(fields: [userId], references: [id])
   shops     shops?   @relation(fields: [shopId], references: [id])
+  products  products? @relation(fields: [productId], references: [id])
+  productId String? @db.ObjectId
 }
 
 model users {
@@ -76,6 +84,7 @@ model shops {
   socialLinks String?
   ratings   Float @default(0)
   reviews   shopReviews[]
+  products  products[]
   sellerId  String @unique @db.ObjectId
   sellers   sellers @relation(fields: [sellerId], references: [id])
   createdAt DateTime @default(now())
@@ -100,4 +109,46 @@ model discount_codes {
   updatedAt     DateTime @updatedAt
 }
 
+model products {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  title        String
+  description String
+  short_description String
+  detailed_description String
+  warranty String?
+  custom_specifications Json?
+  slug String @unique
+  tags String[]
+  cash_on_delivery String?
+  brand String?
+  video_url String?
+  category String
+  colors String[]
+  sizes String[]
+  stock Int
+  discount_codes String[] @db.ObjectId
+  sale_price Float
+  regular_price Float
+  subCategory String
+  customProperties Json?
+  ratings Float @default(5)
+  reviewCount Int @default(0)
+  images images[]
+  sellerId    String   @db.ObjectId
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  starting_date DateTime?
+  ending_date DateTime?
+  is_active Boolean @default(false)
+  isDeleted Boolean? @default(false)
+  deletedAt DateTime?
+  status productStatus @default(Active)
+  shopId String @db.ObjectId
+  shop shops @relation(fields: [shopId], references: [id])
+  
+  
+  @@index([sellerId])
+  @@index([category])
+  @@index([subCategory])
+}
 
