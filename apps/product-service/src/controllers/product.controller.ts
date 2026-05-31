@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import prisma from "@multi-vendor-ecommerce/prisma";
+import { Prisma } from "../../../../generated/prisma/index.js";
 import { AuthenticationError, NotFoundError, ValidationError } from "@packages/error-handler";
 import ImageKit from "@packages/libs/imageKit";
 
@@ -35,7 +36,7 @@ export const createDiscountCodes = async (req: any, res: Response, next: NextFun
 
         if (isDiscountCodesExist) {
             return next(
-                new ValidationError("Discount code already exists", { statusCode: 400 })
+                new ValidationError("Discount code already exists")
             )
         }
 
@@ -140,13 +141,14 @@ export const deleteProductImage = async (req: any, res: Response, next: NextFunc
 
 //Create Product
 export const createProduct = async (req: any, res: Response, next: NextFunction) => {
+    console.log("stage 1")
     try {
         const {
             title, short_description, detailed_description, warranty,
             custom_specifications, slug, tags, cash_on_delivery, brand,
             video_url, category, colors = [], sizes = [],
             discountCodes = [], stock, sale_price, regular_price,
-            subCategory, customProperties = {}, images = []
+            subCategory, customProperties = {}, images = [], starting_date, ending_date, status
         } = req.body;
 
         // Validate only truly required fields (matching Prisma schema)
@@ -186,6 +188,7 @@ export const createProduct = async (req: any, res: Response, next: NextFunction)
             )
         }
 
+        console.log("stage 2")
         const shopId = req.seller?.shop?.id;
         if (!shopId) {
             return next(
@@ -210,6 +213,8 @@ export const createProduct = async (req: any, res: Response, next: NextFunction)
             ? tags
             : (tags ? tags.split(",").map((t: string) => t.trim()).filter(Boolean) : []);
 
+        console.log("Detected stage")
+
         const newProduct = await prisma.products.create({
             data: {
                 title,
@@ -231,6 +236,9 @@ export const createProduct = async (req: any, res: Response, next: NextFunction)
                 sale_price: parseFloat(sale_price),
                 regular_price: parseFloat(regular_price),
                 subCategory,
+                starting_date: starting_date ? new Date(starting_date) : null,
+                ending_date: ending_date ? new Date(ending_date) : null,
+                status: status || "Active",
                 customProperties: customProperties || {},
                 images: {
                     create: images.filter((img: any) => img && img.fileId && img.file_url).map((img: any) => ({
@@ -250,6 +258,9 @@ export const createProduct = async (req: any, res: Response, next: NextFunction)
             }
         });
 
+        console.log("3")
+
+
         return res.status(200).json({
             success: true,
             product: newProduct
@@ -266,7 +277,7 @@ export const getSHopProducts = async (req: any, res: Response, next: NextFunctio
     try {
         const products = await prisma.products.findMany({
             where: {
-                shopId : req.seller?.shop?.id,
+                shopId: req.seller?.shop?.id,
             }, include: {
                 images: true,
             }
@@ -298,7 +309,7 @@ export const deleteProduct = async (req: any, res: Response, next: NextFunction)
             }
         });
 
-        if (!product) { 
+        if (!product) {
             return next(
                 new NotFoundError("Product not found")
             )
@@ -326,7 +337,7 @@ export const deleteProduct = async (req: any, res: Response, next: NextFunction)
             }
         });
 
-        return res.status(200).json({ success: true, message: "Product is scheduled for deletion in 24 hours. You can restore it within this time.",deletedAt: deletedProduct.deletedAt });
+        return res.status(200).json({ success: true, message: "Product is scheduled for deletion in 24 hours. You can restore it within this time.", deletedAt: deletedProduct.deletedAt });
     }
     catch (error) {
         next(error)
@@ -367,7 +378,7 @@ export const restoreProduct = async (req: any, res: Response, next: NextFunction
             return next(
                 new ValidationError("Product is not in deleted state")
             )
-        }   
+        }
 
         await prisma.products.update({
             where: {
@@ -380,8 +391,72 @@ export const restoreProduct = async (req: any, res: Response, next: NextFunction
         });
 
         return res.status(200).json({ success: true, message: "Product restored successfully" });
-    }      
+    }
     catch (error) {
+        next(error)
+    }
+}
+
+//get seller stripe information
+
+
+//get All Products
+export const getAllProducts = async (req: any, res: Response, next: NextFunction) => {
+    try {
+        const page = parseInt(req.query.page as string) || 1
+        const limit = parseInt(req.query.limit as string) || 20
+
+        const skip = (page - 1) * limit
+        const type = req.query.type
+
+        const baseFilter: any = {
+            isDeleted: { not: true },
+            NOT: {
+                AND: [
+                    { starting_date: { not: null } },
+                    { ending_date: { not: null } }
+                ]
+            }
+        }
+
+        const orderBy: Prisma.productsOrderByWithRelationInput = type === "latest" ?
+            { createdAt: "desc" as Prisma.SortOrder } : { ratings: "desc" as Prisma.SortOrder }
+
+
+        const [products, total, top10Products] = await Promise.all([
+            prisma.products.findMany({
+                skip,
+                take: limit,
+                include: {
+                    images: true, shop: true
+                },
+                where: baseFilter,
+                orderBy: {
+                    ratings: "desc"
+                }
+            }),
+            prisma.products.count({
+                where: baseFilter
+            }),
+            prisma.products.findMany({
+                take: 10,
+                where: baseFilter,
+                orderBy
+            })
+
+        ])
+
+        res.status(200).json({
+            success: true,
+            products,
+            top10By: type === "latest" ? "latest" : "topSales",
+            top10Products,
+            total,
+            currentPage: page,
+            totalPages: Math.ceil(total / limit)
+        })
+
+    } catch (error) {
         next(error)
     }
 }

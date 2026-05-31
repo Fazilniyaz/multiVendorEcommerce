@@ -30,7 +30,7 @@ export default function RootLayout({
 
       <body className={`${poppins.variable} ${roboto.variable}`}>
         <Providers>
-          <div className="hidden min-[800px]:block">
+          <div className="hidden min-[400px]:block">
             <Header />
           </div>
           {children}

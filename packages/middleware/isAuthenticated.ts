@@ -3,6 +3,7 @@ import prisma from "@multi-vendor-ecommerce/prisma";
 import { AuthenticationError } from "@packages/error-handler";
 
 const isAuthenticated = async (req: any, res: any, next: any) => {
+    console.log("Passing !isAuthenticated")
     try {
         const token = await req.cookies["access_token"] || req.cookies["seller-access-token"] || req.headers.authorization?.split(" ")[1];
         if (!token) {

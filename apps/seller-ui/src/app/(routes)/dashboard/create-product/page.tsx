@@ -503,12 +503,13 @@ const Page = () => {
                 rules={{
                   required: "Detailed description is required!",
                   validate: (value) => {
-                    const wordCount = value
-                      ?.split(/\s+/)
+                    const plainText = typeof value === 'string' ? value.replace(/<[^>]*>?/gm, ' ') : '';
+                    const wordCount = plainText
+                      .split(/\s+/)
                       .filter((word: string) => word).length;
                     return (
                       wordCount >= 100 ||
-                      "Detailed description must be at least 100 words"
+                      `Detailed description must be at least 100 words (Current: ${wordCount})`
                     );
                   },
                 }}
