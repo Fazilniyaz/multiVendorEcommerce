@@ -8,11 +8,39 @@ import HeartIcon from '../../../assets/svgs/heart-icon'
 import CartIcon from '../../../assets/svgs/cart-icon'
 import HeaderBottom from '../header-bottom'
 import { useUser } from '../../../hooks/useUser'
+import axiosInstance from '../../../utils/axiosInstance'
+import {useStore} from '../../../store'
+import useLocationTracker from '../../../hooks/useLocation'
+import useDeviceTracker from '../../../hooks/useDeviceTracking'
 
 export default function Header() {
     const { user, isLoading } = useUser()
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
     const [searchValue, setSearchValue] = useState("")
+    const [searchQuery, setSearchQuery] = useState("")
+    const [ loadingSuggestions, setLoadingSuggestions ] = useState(false)
+    const [suggestions, setSuggestions] = useState<any[]>([])
+    const wishlist = useStore((state) => state.wishlist)
+    const cart = useStore((state) => state.cart)
+    const addToCart = useStore((state) => state.addToCart)
+    const location = useLocationTracker()
+    const deviceInfo = useDeviceTracker()
+
+    const handleSearchClick = async () => {
+        if(searchValue.trim() === "") return
+        setLoadingSuggestions(true)
+        try{
+            const res = await axiosInstance.get(
+                `/product/api/search-products?q=${encodeURIComponent(searchValue)}&limit=5`
+            )
+            setSuggestions(res.data.products.slice(0, 10)) // Limit to top 10 suggestions
+        } catch(err) {
+            console.error("Error fetching search suggestions:", err)
+            
+        }finally {
+            setLoadingSuggestions(false)
+        }
+    }
 
     return (
         <div className='w-full bg-white border-b border-gray-100'>
@@ -44,6 +72,7 @@ export default function Header() {
                                 focus:border-[#2563eb] transition-colors'
                         />
                         <button
+                            onClick={handleSearchClick}
                             aria-label="Search"
                             className='absolute right-0 top-0 w-[50px] h-[46px]
                                 bg-[#3489FF] hover:bg-[#2563eb] active:scale-95
@@ -85,7 +114,7 @@ export default function Header() {
                                 <span className='absolute -top-1 -right-1 w-5 h-5 bg-red-500
                                     border-2 border-white rounded-full flex items-center
                                     justify-center text-white text-[9px] font-bold'>
-                                    0
+                                    {wishlist && wishlist.length > 9 ? "9+" : wishlist ? wishlist.length : 0}
                                 </span>
                             </Link>
                             <Link
@@ -97,7 +126,7 @@ export default function Header() {
                                 <span className='absolute -top-1 -right-1 w-5 h-5 bg-red-500
                                     border-2 border-white rounded-full flex items-center
                                     justify-center text-white text-[9px] font-bold'>
-                                    9+
+                                    {cart && cart.length > 9 ? "9+" : cart ? cart.length : 0}
                                 </span>
                             </Link>
                         </div>
@@ -119,12 +148,15 @@ export default function Header() {
                     <div className='relative'>
                         <input
                             type="text"
+                            value={searchValue}
+                            onChange={(e) => setSearchValue(e.target.value)}
                             placeholder='Search for products...'
                             className='w-full h-[42px] pl-4 pr-12 text-sm
                                 border-2 border-[#3489FF] outline-none
                                 placeholder-gray-400'
                         />
                         <button
+                            onClick={handleSearchClick}
                             aria-label="Search"
                             className='absolute right-0 top-0 w-[42px] h-[42px]
                                 bg-[#3489FF] flex items-center justify-center'

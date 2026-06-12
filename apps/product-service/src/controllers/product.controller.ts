@@ -148,7 +148,7 @@ export const createProduct = async (req: any, res: Response, next: NextFunction)
             custom_specifications, slug, tags, cash_on_delivery, brand,
             video_url, category, colors = [], sizes = [],
             discountCodes = [], stock, sale_price, regular_price,
-            subCategory, customProperties = {}, images = [], starting_date, ending_date, status
+            subCategory, custom_properties = [], images = [], starting_date, ending_date, status
         } = req.body;
 
         // Validate only truly required fields (matching Prisma schema)
@@ -215,6 +215,21 @@ export const createProduct = async (req: any, res: Response, next: NextFunction)
 
         console.log("Detected stage")
 
+        // Transform custom_properties from seller-ui shape [{ label, values[] }]
+        // into the flat [{ name, value }] pairs that the user-ui reads.
+        const normalizedCustomProperties: { name: string; value: string }[] = [];
+        if (Array.isArray(custom_properties)) {
+            for (const prop of custom_properties) {
+                const propName = prop.label ?? prop.name;
+                const rawValues = prop.values ?? (prop.value ? [prop.value] : []);
+                for (const val of rawValues) {
+                    if (propName && val) {
+                        normalizedCustomProperties.push({ name: propName, value: val });
+                    }
+                }
+            }
+        }
+
         const newProduct = await prisma.products.create({
             data: {
                 title,
@@ -239,7 +254,7 @@ export const createProduct = async (req: any, res: Response, next: NextFunction)
                 starting_date: starting_date ? new Date(starting_date) : null,
                 ending_date: ending_date ? new Date(ending_date) : null,
                 status: status || "Active",
-                customProperties: customProperties || {},
+                customProperties: normalizedCustomProperties,
                 images: {
                     create: images.filter((img: any) => img && img.fileId && img.file_url).map((img: any) => ({
                         file_id: img.fileId,
@@ -333,7 +348,7 @@ export const deleteProduct = async (req: any, res: Response, next: NextFunction)
             },
             data: {
                 isDeleted: true,
-                deletedAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // Schedule permanent deletion after 24 hours,
+                deletedAt: new Date() // Record the exact time of soft-delete; cron will permanently delete after 24h
             }
         });
 

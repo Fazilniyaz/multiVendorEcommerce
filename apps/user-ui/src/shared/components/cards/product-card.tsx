@@ -19,10 +19,8 @@ function ProductCard({ product, isEvent }: { product: any; isEvent?: boolean }) 
     const removeFromWishList =  useStore((state : any) => state.removeFromWishlist)
     const addToCart = useStore((state : any) => state.addToCart)
     const removeFromCart = useStore((state : any) => state.removeFromCart)
-    const wishlistItems = useStore((state: any) => state.wishlist)
-    const cartItems = useStore((state: any) => state.cart)
-    const isWishListed = wishlistItems?.some((p: any) => p.id === product.id)
-    const isInCart = cartItems?.some((p: any) => p.id === product.id)
+    const isWishListed = useStore((state: any) => state.isInWishlist(product.id))
+    const isInCart = useStore((state: any) => state.isInCart(product.id))
     const user = useUser()
     const location = useLocationTracker()
     const deviceInfo = useDeviceTracker()
@@ -248,13 +246,15 @@ function ProductCard({ product, isEvent }: { product: any; isEvent?: boolean }) 
                     <div className="flex items-center gap-2 mt-auto pt-3">
                         <button
                             type="button"
+                            onClick={() => !isInCart && addToCart({...product, quantity: 1}, user, location, deviceInfo)}
                             className="flex-1 flex items-center justify-center gap-2
                                 bg-blue-600 hover:bg-blue-700 active:scale-[0.98]
                                 text-white text-[13px] font-semibold
-                                px-4 py-2.5 rounded-xl transition-all duration-150"
+                                px-4 py-2.5 rounded-xl transition-all duration-150 disabled:opacity-50"
+                            disabled={isInCart}
                         >
                             <ShoppingBag size={15} />
-                            Add to Cart
+                            {isInCart ? "In Cart" : "Add to Cart"}
                         </button>
                     </div>
                 </div>

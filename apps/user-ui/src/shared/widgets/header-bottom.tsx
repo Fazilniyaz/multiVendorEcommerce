@@ -7,11 +7,19 @@ import ProfileIcon from '../../assets/svgs/profile-icon'
 import HeartIcon from '../../assets/svgs/heart-icon'
 import CartIcon from '../../assets/svgs/cart-icon'
 import { useUser } from '../../hooks/useUser'
+import {useStore} from '../../store'
+import useLocationTracker from '../../hooks/useLocation'
+import useDeviceTracker from '../../hooks/useDeviceTracking'
 
 export default function HeaderBottom() {
     const [show, setShow]           = useState(false)
     const [isSticky, setIsSticky]   = useState(false)
     const { user, isLoading }       = useUser()
+        const wishlist = useStore((state) => state.wishlist)
+    const cart = useStore((state) => state.cart)
+    const addToCart = useStore((state) => state.addToCart)
+    const location = useLocationTracker()
+    const deviceInfo = useDeviceTracker()
 
     useEffect(() => {
         const handleScroll = () => setIsSticky(window.scrollY > 100)
@@ -154,7 +162,7 @@ export default function HeaderBottom() {
                                             bg-red-500 border-2 border-[#3489FF] rounded-full
                                             flex items-center justify-center
                                             text-white text-[8px] font-bold'>
-                                            0
+                                            {wishlist && wishlist.length > 9 ? "9+" : wishlist ? wishlist.length : 0}
                                         </span>
                                     </Link>
                                     <Link
@@ -168,7 +176,7 @@ export default function HeaderBottom() {
                                             bg-red-500 border-2 border-[#3489FF] rounded-full
                                             flex items-center justify-center
                                             text-white text-[8px] font-bold'>
-                                            9+
+                                            {cart && cart.length > 9 ? "9+" : cart ? cart.length : 0}
                                         </span>
                                     </Link>
                                 </div>

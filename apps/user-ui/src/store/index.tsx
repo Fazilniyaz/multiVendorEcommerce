@@ -19,6 +19,8 @@ type Store = {
     removeFromCart: (productId: string, user:any, location : any, deviceInfo : string) => void;
     addToWishlist: (product: Product, user:any, location : any, deviceInfo : string) => void;
     removeFromWishlist: (productId: string, user:any, location : any, deviceInfo : string) => void;
+    isInWishlist: (productId: string) => boolean;
+    isInCart: (productId: string) => boolean;
 }
 
 export const useStore = create<Store>()(
@@ -75,6 +77,14 @@ export const useStore = create<Store>()(
                     ...state,
                     wishlist: state.wishlist.filter(p => p.id !== productId),
                 }));
+            },
+
+            isInWishlist: (productId) => {
+                return get().wishlist.some(p => p.id === productId);
+            },
+
+            isInCart: (productId) => {
+                return get().cart.some(p => p.id === productId);
             },
         }),
         {
