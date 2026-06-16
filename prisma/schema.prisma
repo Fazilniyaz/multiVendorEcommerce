@@ -158,3 +158,37 @@ model products {
   @@index([subCategory])
 }
 
+// ─── Analytics Models ─────────────────────────────────────────────────────────
+
+/// Tracks per-user behavioural events (product views, cart/wishlist adds, etc.)
+model UserAnalytics {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  /// The user this record belongs to (matches users.id in the app)
+  userId      String   @unique
+  /// Array of action objects: { productId, shopId, action, timestamp }
+  actions     Json     @default("[]")
+  lastVisited DateTime @default(now())
+  country     String?
+  city        String?
+  device      Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+/// Aggregates per-product engagement counters for analytics dashboards
+model ProductAnalytics {
+  id                  String   @id @default(auto()) @map("_id") @db.ObjectId
+  productId           String   @unique
+  shopId              String?
+  views               Int      @default(0)
+  addedToCart         Int      @default(0)
+  removedFromCart     Int      @default(0)
+  addedToWishlist     Int      @default(0)
+  removedFromWishlist Int      @default(0)
+  purchases           Int      @default(0)
+  lastViewedAt        DateTime @default(now())
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([shopId])
+}

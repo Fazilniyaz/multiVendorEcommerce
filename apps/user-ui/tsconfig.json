@@ -24,20 +24,19 @@
     ],
     "paths": {
       "@/*": [
-        "apps/user-ui/src/*"
+        "./src/*"
+      ],
+      "@packages/*": [
+        "../../packages/*"
       ]
-    },
-    "outDir": "dist",
-    "rootDir": "src",
-    "tsBuildInfoFile": "dist/tsconfig.tsbuildinfo"
+    }
   },
   "include": [
     "src/**/*.ts",
     "src/**/*.tsx",
     "src/**/*.js",
     "src/**/*.jsx",
-    "../../apps/user-ui/.next/types/**/*.ts",
-    "../../dist/apps/user-ui/.next/types/**/*.ts",
+    ".next/types/**/*.ts",
     "next-env.d.ts"
   ],
   "exclude": [
