@@ -13,10 +13,13 @@ export async function sendKafkaEvent(eventData: {
 }) {
     // A new producer is created per-call so that the stateless server action
     // does not share a long-lived connection across requests.
+
+    console.log(eventData, "Sending Kafka event for action:", eventData.action);
+
     const producer = kafkaClient.producer();
     try {
         await producer.connect();
-        await producer.send({
+        await producer.send({ 
             topic: "checkout",
             messages: [
                 {

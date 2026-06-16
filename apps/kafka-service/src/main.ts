@@ -30,6 +30,7 @@ const processQueue = async () => {
     const validActions = ["add_to_wishlist", "add_to_cart", "product_view", "remove_from_wishlist", "remove_from_cart", "checkout", "order_placed"];
 
     if (!event.action || !validActions.includes(event.action)) {
+      console.log(`Received event with invalid or missing action: ${event.action}`);
       console.warn(`Received event with invalid or missing action: ${event.action}`);
       continue; // Skip processing this event
     }

@@ -3,6 +3,12 @@ import prisma from "@multi-vendor-ecommerce/prisma";
 
 export const updateUserAnalytics = async (event: any) => {
     console.log("Updating analytics for event:", event);
+    
+    // Validation: Ensure required fields exist
+    if (!event.userId || !event.productId) {
+        console.warn("Missing userId or productId in event:", event);
+        return;
+    }
 try{
      const exisitngData = await prisma.userAnalytics.findUnique({
         where : {
@@ -18,6 +24,10 @@ try{
 
      const actionExists = updatedActions.some((a:any) => a.productId === event.productId && a.action === event.action);
 
+     console.log("Current actions in DB:", JSON.stringify(updatedActions));
+     console.log("Event data:", { productId: event.productId, action: event.action });
+     console.log("Action already exists:", actionExists);
+
      //Always store 'product_view' events, even if they already exist, to track multiple views of the same product
         if (event.action === "product_view") {
             updatedActions.push({
@@ -29,7 +39,7 @@ try{
         }
 
         else if(["add_to_wishlist", "add_to_cart"].includes(event.action) && !actionExists){
-            console.log("Addingggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg")
+            console.log("Addingggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg" , event.action)
             updatedActions.push({
                 productId: event?.productId,
                 shopId : event?.shopId,
@@ -40,12 +50,20 @@ try{
 
         //removing add_to_cart when 'remove_from_cart' is triggered
         else if(event.action === "remove_from_cart"){
-            updatedActions = updatedActions.filter((entry:any) => !(entry.productId === event.productId && entry.action === "add_to_cart"))
+            console.log("BEFORE FILTER - updatedActions:", JSON.stringify(updatedActions));
+            console.log("FILTER CRITERIA - productId:", event.productId, "looking for action: add_to_cart");
+            const productIdString = String(event.productId);
+            updatedActions = updatedActions.filter((entry:any) => !(String(entry.productId) === productIdString && entry.action === "add_to_cart"))
+            console.log("AFTER FILTER - updatedActions:", JSON.stringify(updatedActions));
         }
 
         //removing add_to_wishlist when 'remove_from_wishlist' is triggered
         else if(event.action === "remove_from_wishlist"){
-            updatedActions = updatedActions.filter((entry:any) => !(entry.productId === event.productId && entry.action === "add_to_wishlist"))
+            console.log("BEFORE FILTER - updatedActions:", JSON.stringify(updatedActions));
+            console.log("FILTER CRITERIA - productId:", event.productId, "looking for action: add_to_wishlist");
+            const productIdString = String(event.productId);
+            updatedActions = updatedActions.filter((entry:any) => !(String(entry.productId) === productIdString && entry.action === "add_to_wishlist"))
+            console.log("AFTER FILTER - updatedActions:", JSON.stringify(updatedActions));
         }
 
         //keep only the last 100 actions to prevent storage bloat
@@ -71,22 +89,28 @@ try{
         console.log("Updated actions for user:", updatedActions);
 
         //update or create the user analytics record
-        await prisma.userAnalytics.upsert({
-            where : {
-                userId : event.userId
-            },
-            update : {
-                lastVisited : new Date(),
-                actions : updatedActions,
-                ...extraFields
-            },
-            create : {
-                userId : event.userId,
-                lastVisited : new Date(),
-                actions : updatedActions,
-                ...extraFields
-            }
-        })
+        try {
+            const result = await prisma.userAnalytics.upsert({
+                where : {
+                    userId : event.userId
+                },
+                update : {
+                    lastVisited : new Date(),
+                    actions : updatedActions,
+                    ...extraFields
+                },
+                create : {
+                    userId : event.userId,
+                    lastVisited : new Date(),
+                    actions : updatedActions,
+                    ...extraFields
+                }
+            })
+            console.log("User analytics updated successfully:", result);
+        } catch (dbError) {
+            console.error("Database error during upsert:", dbError);
+            throw dbError;
+        }
 
 
 

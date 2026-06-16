@@ -95,7 +95,7 @@ export const useStore = create<Store>()(
 
       removeFromCart: (productId, user, location, deviceInfo) => {
         const removeProduct = get().cart.find((p) => p.id === productId);
-
+        console.log(user, location, deviceInfo);
         set((state) => ({
           ...state,
           cart: state.cart?.filter((p) => p.id !== productId),
@@ -120,7 +120,7 @@ export const useStore = create<Store>()(
         if (existing) {
           return;
         }
-
+        console.log(user, location, deviceInfo);
         set((state) => ({
           ...state,
           wishlist: [...state.wishlist, product],
@@ -143,7 +143,7 @@ export const useStore = create<Store>()(
       removeFromWishlist: (productId, user, location, deviceInfo) => {
 
         const removeProduct = get().wishlist.find((p) => p.id === productId);
-
+        console.log(user, location, deviceInfo);
         set((state) => ({
           ...state,
           wishlist: state.wishlist.filter((p) => p.id !== productId),
@@ -151,6 +151,7 @@ export const useStore = create<Store>()(
 
          //send kafka event
         if (user?.user?.id && deviceInfo && location && removeProduct) {
+          console.log("Sending Kafka event for remove_from_wishlist:")
           sendKafkaEvent({
             userId: user?.user?.id,
             productId: removeProduct?.id,
